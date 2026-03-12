@@ -337,8 +337,17 @@ textarea{resize:vertical;min-height:84px;line-height:1.6}
       <div class="divider">Assignment</div>
       <div><label>Assign To</label>
         <select id="n-assign"><option value="">Unassigned / TBD</option>
-          <option>Thomas</option><option>Adrian</option><option>Uriel</option><option>Jose</option>
-          <option>Thomas/Uriel</option><option>Adrian/Thomas</option><option>Adrian/Jose</option><option>Adrian/Uriel/Thomas</option>
+          <optgroup label="── Individuals ──">
+          <option>Jose (Supervisor)</option><option>Thomas</option><option>Uriel</option><option>Adrian</option>
+          </optgroup>
+          <optgroup label="── Combinations ──">
+          <option>Thomas/Uriel</option><option>Thomas/Adrian</option><option>Thomas/Jose</option>
+          <option>Uriel/Adrian</option><option>Uriel/Jose</option>
+          <option>Adrian/Jose</option>
+          <option>Thomas/Uriel/Adrian</option><option>Thomas/Uriel/Jose</option>
+          <option>Thomas/Adrian/Jose</option><option>Uriel/Adrian/Jose</option>
+          <option>Thomas/Uriel/Adrian/Jose</option>
+          </optgroup>
         </select></div>
       <div><label>Requested By</label><input id="n-reqby" type="text" placeholder="Your name"></div>
       <div><label>Work Order Date</label><div class="date-wrap"><input id="n-date" type="date"><span class="cal-icon">📅</span></div></div>
@@ -383,8 +392,17 @@ textarea{resize:vertical;min-height:84px;line-height:1.6}
         <select id="e-pri"><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option><option>Potential Issue</option></select></div>
       <div><label>Assigned To</label>
         <select id="e-assign"><option value="">Unassigned</option>
-          <option>Thomas</option><option>Adrian</option><option>Uriel</option><option>Jose</option>
-          <option>Thomas/Uriel</option><option>Adrian/Thomas</option><option>Adrian/Jose</option><option>Adrian/Uriel/Thomas</option>
+          <optgroup label="── Individuals ──">
+          <option>Jose (Supervisor)</option><option>Thomas</option><option>Uriel</option><option>Adrian</option>
+          </optgroup>
+          <optgroup label="── Combinations ──">
+          <option>Thomas/Uriel</option><option>Thomas/Adrian</option><option>Thomas/Jose</option>
+          <option>Uriel/Adrian</option><option>Uriel/Jose</option>
+          <option>Adrian/Jose</option>
+          <option>Thomas/Uriel/Adrian</option><option>Thomas/Uriel/Jose</option>
+          <option>Thomas/Adrian/Jose</option><option>Uriel/Adrian/Jose</option>
+          <option>Thomas/Uriel/Adrian/Jose</option>
+          </optgroup>
         </select></div>
       <div><label>Equipment Detail</label><input id="e-detail" type="text"></div>
       <div class="full"><label>Resolution / Work Performed</label>
