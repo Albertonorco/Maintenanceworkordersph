@@ -354,7 +354,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.6}
       <div class="full"><label>Resolution / Work Performed</label>
         <textarea id="e-resolution" placeholder="What was done to fix the issue…"></textarea></div>
       <div><label>Delay Reason</label>
-        <select id="e-delay"><option value="">None</option>
+        <select id="e-delay" onchange="onDelayChange()"><option value="">None</option>
           <option>Parts Delayed</option><option>Parts Ordered</option>
           <option>Outside Contractor Contacted</option><option>Outside Contractor Scheduled</option>
           <option>Waiting on Approval</option><option>Other</option>
@@ -662,6 +662,18 @@ function openEdit(id) {
   document.getElementById('e-notes').value=o.notes||'';
   document.getElementById('editOverlay').classList.add('open');
 }
+
+function onDelayChange() {
+  const delayVal = document.getElementById('e-delay').value;
+  const statusSel = document.getElementById('e-status');
+  if (delayVal) {
+    // Auto-set status to Delayed when a reason is selected
+    statusSel.value = 'Delayed';
+  } else {
+    // If delay reason cleared and status is still Delayed, revert to In Process
+    if (statusSel.value === 'Delayed') statusSel.value = 'In Process';
+  }
+}
 function closeEdit(){ document.getElementById('editOverlay').classList.remove('open'); }
 
 async function saveEdit() {
@@ -871,10 +883,33 @@ function mobileFilter(f, btnId) {
 </div>
 
 <script>
-// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+// ── SERVICE WORKER - AUTO UPDATE ─────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW:', err));
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('sw.js');
+
+      // Check for updates every 60 seconds
+      setInterval(() => reg.update(), 60000);
+
+      // When a new service worker is waiting, activate it immediately
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version ready — tell it to skip waiting and reload
+            newWorker.postMessage('skipWaiting');
+          }
+        });
+      });
+
+      // When the new SW takes control, reload the page to get fresh content
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        showToast('🔄 App updated to latest version!', 'ok');
+        setTimeout(() => window.location.reload(), 1500);
+      });
+
+    } catch(err) { console.warn('SW registration failed:', err); }
   });
 }
 
