@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Maintenance Portal</title>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f5a623">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maintenance">
+<meta name="application-name" content="Maintenance Portal">
+<meta name="description" content="Live maintenance work order tracking">
+
+<!-- Icons -->
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+
+<!-- PWA Install prompt banner styles -->
+<style>
+#pwa-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#13161e;border-top:2px solid #f5a623;padding:14px 18px;align-items:center;gap:14px;box-shadow:0 -4px 24px rgba(0,0,0,0.5)}
+#pwa-banner.show{display:flex}
+#pwa-banner-icon{width:44px;height:44px;background:#f5a623;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+#pwa-banner-text{flex:1;min-width:0}
+#pwa-banner-title{font-size:14px;font-weight:800;color:#e8eaf0;margin-bottom:2px}
+#pwa-banner-sub{font-size:11px;color:#5a6380}
+#pwa-install-btn{background:#f5a623;border:none;border-radius:8px;padding:10px 16px;color:#000;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
+#pwa-dismiss-btn{background:none;border:none;color:#5a6380;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0}
+@media(max-width:700px){
+  #pwa-banner{padding:12px 14px;gap:10px}
+  #pwa-banner-sub{display:none}
+  body.has-pwa-banner .main{padding-bottom:140px}
+}
+</style>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#0f1117;color:#e8eaf0;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0f1117}::-webkit-scrollbar-thumb{background:#2e3650;border-radius:3px}
+.topbar{background:#13161e;border-bottom:2px solid #f5a623;padding:8px 16px;min-height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:#f5a623;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.logo-text{font-size:18px;font-weight:900;letter-spacing:3px;color:#e8eaf0}
+.logo-sub{font-size:10px;color:#5a6380;letter-spacing:1.5px;text-transform:uppercase}
+.top-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn-new{background:#f5a623;border:none;padding:9px 18px;border-radius:8px;color:#000;font-size:13px;font-weight:800;cursor:pointer}
+.btn-new:hover{background:#d4880e}
+.btn-mgr{background:#1a1d26;border:1px solid #252b3b;padding:9px 14px;border-radius:8px;color:#e8eaf0;font-size:13px;font-weight:700;cursor:pointer}
+.btn-mgr:hover{border-color:#f5a623;color:#f5a623}
+.sync-badge{font-size:11px;color:#4dd68a;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(54,214,138,0.08);border:1px solid rgba(54,214,138,0.2);border-radius:20px}
+.layout{display:flex;min-height:calc(100vh - 54px)}
+.sidebar{width:200px;background:#13161e;border-right:1px solid #1e2230;padding:12px 0;flex-shrink:0}
+.sidebar-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#2e3347;padding:10px 14px 5px}
+.sitem{display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:13px;color:#5a6380;cursor:pointer;border-right:3px solid transparent;transition:all 0.12s}
+.sitem:hover{background:#1a1d26;color:#e8eaf0}
+.sitem.active{background:rgba(245,166,35,0.1);color:#f5a623;border-right-color:#f5a623}
+.sitem .cnt{margin-left:auto;background:#1a1d26;border-radius:10px;padding:1px 7px;font-size:10px;font-family:monospace}
+.main{flex:1;padding:20px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:#13161e;border:1px solid #1e2230;border-radius:10px;padding:14px 16px}
+.stat-num{font-size:40px;font-weight:900;line-height:1;margin-bottom:3px}
+.stat-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a6380}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.view-title{font-size:19px;font-weight:900;letter-spacing:1px;flex:1;min-width:100px}
+.search{background:#13161e;border:1px solid #1e2230;border-radius:8px;padding:9px 13px;font-size:13px;color:#e8eaf0;outline:none;width:230px}
+.search:focus{border-color:#f5a623}
+.sort-btn{background:#13161e;border:1px solid #1e2230;border-radius:8px;padding:9px 12px;color:#5a6380;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.table-wrap{background:#13161e;border:1px solid #1e2230;border-radius:11px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 13px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#2e3347;text-align:left;border-bottom:1px solid #1e2230;white-space:nowrap}
+tbody tr{border-bottom:1px solid #1e2230;cursor:pointer;transition:background 0.1s}
+tbody tr:hover{background:#1a1d26}
+tbody tr:last-child{border-bottom:none}
+td{padding:11px 13px;font-size:13px;vertical-align:middle}
+.tid{font-family:monospace;font-size:12px;color:#2e3347;font-weight:600}
+.eq-name{font-size:11px;font-weight:600;color:#8892b0;font-family:monospace;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-detail{font-size:10px;color:#2e3347;margin-top:2px}
+.desc-cell{font-size:12px;color:#5a6380;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.assignee{display:flex;align-items:center;gap:7px;font-size:12px;color:#8892b0;font-weight:500;white-space:nowrap}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.edit-btn{background:#1a1d26;border:1px solid #252b3b;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.12s}
+tbody tr:hover .edit-btn{opacity:1}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.p-urgent{background:#2d0808;border:1px solid #8b1a1a;color:#ff6b6b}.p-urgent::before{background:#ff3b3b}
+.p-high{background:#2d1608;border:1px solid #8b4a0a;color:#ff9a4d}.p-high::before{background:#ff7a00}
+.p-medium{background:#2d2708;border:1px solid #8b7a00;color:#ffd93d}.p-medium::before{background:#f5c400}
+.p-low{background:#08291a;border:1px solid #0f6b35;color:#4dd68a}.p-low::before{background:#36d68a}
+.p-potential{background:#0a1228;border:1px solid #1a3f8b;color:#7b9ef5}.p-potential::before{background:#7b9ef5}
+.s-notstart{background:#1a1d24;border:1px solid #2e3347;color:#8892b0}.s-notstart::before{background:#8892b0}
+.s-inprocess{background:#08152d;border:1px solid #1a3580;color:#5b9ef5}.s-inprocess::before{background:#5b9ef5}
+.s-delayed{background:#2d0808;border:1px solid #8b1a1a;color:#ff6b6b}.s-delayed::before{background:#ff3b3b}
+.s-completed{background:#08221a;border:1px solid #0f6b35;color:#4dd68a}.s-completed::before{background:#36d68a}
+.empty{padding:60px 20px;text-align:center;color:#2e3347}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:#13161e;border:1px solid #252b3b;border-radius:14px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.7);transform:translateY(20px);transition:transform 0.2s}
+.overlay.open .modal{transform:translateY(0)}
+.modal-hdr{padding:18px 22px 14px;border-bottom:1px solid #1e2230;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#13161e;z-index:1}
+.modal-title{font-size:19px;font-weight:900;letter-spacing:1px}
+.modal-sub{font-size:11px;color:#5a6380;margin-top:3px}
+.modal-close{background:#1a1d26;border:1px solid #252b3b;border-radius:7px;width:30px;height:30px;cursor:pointer;color:#5a6380;font-size:14px;display:flex;align-items:center;justify-content:center}
+.modal-body{padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{padding:12px 22px 18px;border-top:1px solid #1e2230;display:flex;gap:9px;justify-content:flex-end;align-items:center}
+.full{grid-column:span 2}
+.divider{grid-column:span 2;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2e3347;border-bottom:1px solid #1e2230;padding-bottom:7px;margin-top:4px}
+label{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2e3347;display:block;margin-bottom:5px}
+label .req{color:#ff4444;margin-left:2px}
+input,select,textarea{background:#0f1117;border:1px solid #252b3b;border-radius:8px;padding:9px 11px;font-size:13px;color:#e8eaf0;outline:none;font-family:Arial,sans-serif;width:100%;transition:border-color 0.18s}
+input:focus,select:focus,textarea:focus{border-color:#f5a623}
+select option{background:#0f1117;color:#e8eaf0}
+textarea{resize:vertical;min-height:84px;line-height:1.6}
+.btn-primary{background:#f5a623;border:none;border-radius:8px;padding:10px 20px;color:#000;font-size:13px;font-weight:800;cursor:pointer}
+.btn-primary:hover{background:#d4880e}
+.btn-secondary{background:transparent;border:1px solid #252b3b;border-radius:8px;padding:10px 16px;color:#5a6380;font-size:13px;font-weight:600;cursor:pointer}
+.btn-secondary:hover{border-color:#3a4060;color:#e8eaf0}
+.btn-danger{background:transparent;border:1px solid rgba(255,59,59,0.35);border-radius:8px;padding:10px 14px;color:#ff6b6b;font-size:13px;font-weight:600;cursor:pointer;margin-right:auto}
+.btn-blue{background:rgba(61,126,255,0.12);border:1px solid rgba(61,126,255,0.3);border-radius:7px;padding:7px 13px;color:#5b9ef5;font-size:12px;font-weight:700;cursor:pointer}
+.detail-badges{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.meta-box{background:#0f1117;border:1px solid #1e2230;border-radius:8px;padding:11px}
+.meta-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#2e3347;margin-bottom:4px}
+.meta-val{font-size:13px;font-weight:600;color:#e8eaf0}
+.text-section{margin-bottom:13px}
+.text-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#2e3347;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #1e2230}
+.text-box{background:#0f1117;padding:12px 13px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.7}
+.text-empty{color:#2e3347;font-style:italic}
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:#13161e;border-radius:9px;padding:12px 18px;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,0.5);transform:translateY(70px);opacity:0;transition:all 0.3s;pointer-events:none;max-width:300px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-left:4px solid #36d68a}
+.toast.err{border-left:4px solid #ff3b3b}
+.loading-row td{text-align:center;padding:40px;color:#5a6380}
+.footer-note{margin-top:12px;font-size:11px;color:#2e3347;text-align:center}
+.date-wrap{position:relative;display:flex;align-items:center}
+.date-wrap input[type="date"]{flex:1;padding-right:38px;cursor:pointer}
+.date-wrap input[type="date"]::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;width:100%;height:100%;cursor:pointer}
+.cal-icon{position:absolute;right:10px;font-size:16px;pointer-events:none;color:#f5a623;line-height:1}
+.part-tag{display:inline-flex;align-items:center;gap:5px;background:#0f1117;border:1px solid #252b3b;border-radius:6px;padding:4px 9px;font-size:12px;margin:3px}
+.part-tag button{background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:13px;padding:0;line-height:1}
+.machine-card{background:#0f1117;border:1px solid #1e2230;border-radius:10px;padding:14px;margin-bottom:11px}
+.machine-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.machine-name{font-size:14px;font-weight:800}
+.machine-count{font-size:11px;color:#5a6380;margin-top:2px}
+.parts-area{display:flex;flex-wrap:wrap;min-height:28px;margin-bottom:8px}
+.add-part-row{display:flex;gap:7px;margin-top:5px}
+.add-part-row input{flex:1;padding:7px 10px;font-size:12px}
+.add-part-btn{background:#f5a623;border:none;border-radius:7px;padding:7px 13px;color:#000;font-size:12px;font-weight:800;cursor:pointer}
+.del-machine-btn{background:transparent;border:1px solid rgba(255,59,59,0.3);border-radius:6px;padding:4px 10px;color:#ff6b6b;font-size:11px;font-weight:700;cursor:pointer}
+.add-machine-box{background:#0f1117;border:2px dashed #252b3b;border-radius:10px;padding:16px;margin-bottom:11px}
+.add-machine-box label{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2e3347;display:block;margin-bottom:5px}
+.add-machine-box input{margin-bottom:8px}
+.mgr-modal{max-width:680px}
+
+@media(max-width:700px){
+  .stats{grid-template-columns:1fr 1fr}
+  .sidebar{display:none}
+  .modal-body{grid-template-columns:1fr}
+  .full{grid-column:span 1}
+  .meta-grid{grid-template-columns:1fr}
+  td:nth-child(5),td:nth-child(7),th:nth-child(5),th:nth-child(7){display:none}
+  .logo-text{font-size:14px;letter-spacing:1px}
+  .logo-sub{display:none}
+  .top-btns{gap:5px}
+  .btn-new{padding:8px 12px;font-size:12px}
+  .btn-mgr{padding:8px 10px;font-size:12px}
+  .sync-badge{display:none}
+  .main{padding:12px}
+  .stats{gap:8px;margin-bottom:14px}
+  .stat{padding:10px 12px}
+  .stat-num{font-size:32px}
+  .stat-lbl{font-size:10px}
+  .toolbar{gap:7px}
+  .view-title{font-size:15px}
+  .search{width:100%;font-size:14px}
+  .sort-btn{font-size:12px;padding:8px 10px}
+  thead th{padding:8px 8px;font-size:9px}
+  td{padding:10px 8px;font-size:12px}
+  .badge{font-size:10px;padding:2px 7px}
+  .modal{border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%;max-height:92vh;margin:0}
+  .overlay{align-items:flex-end;padding:0}
+  .modal-hdr{padding:14px 16px 12px}
+  .modal-title{font-size:16px}
+  .modal-body{padding:14px 16px;gap:10px}
+  .modal-footer{padding:10px 16px 20px}
+  input,select,textarea{font-size:16px;padding:12px}
+  .btn-primary,.btn-secondary,.btn-danger{padding:13px 16px;font-size:14px}
+  .meta-box{padding:10px}
+  .text-box{padding:10px 12px;font-size:13px}
+  .d-body-pad{padding:14px 16px}
+  .mgr-modal{border-radius:12px 12px 0 0}
+}
+
+/* Bottom nav for mobile */
+.mobile-nav{display:none}
+@media(max-width:700px){
+  .mobile-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:#13161e;border-top:1px solid #1e2230;
+    z-index:90;height:58px;
+  }
+  .mobile-nav-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;cursor:pointer;color:#5a6380;font-size:10px;font-weight:700;
+    border:none;background:none;transition:color 0.15s;
+  }
+  .mobile-nav-btn.active{color:#f5a623}
+  .mobile-nav-btn span:first-child{font-size:20px}
+  .main{padding-bottom:70px}
+}
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    <div>
+      <div class="logo-text">MAINTENANCE PORTAL</div>
+      <div class="logo-sub">Live · Shared · Demlerbros</div>
+    </div>
+  </div>
+  <div class="top-btns">
+    <div class="sync-badge" id="syncBadge">🟢 Live</div>
+    <button class="btn-mgr" onclick="openMachineManager()">⚙ Manage Machines</button>
+    <button class="btn-new" onclick="openNew()">＋ New Work Order</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-label">Views</div>
+    <div class="sitem active" id="sf-all"     onclick="setFilter('all',this)">📋 All Orders    <span class="cnt" id="sc-all">0</span></div>
+    <div class="sitem"        id="sf-open"    onclick="setFilter('open',this)">🔓 Open          <span class="cnt" id="sc-open">0</span></div>
+    <div class="sitem"        id="sf-ip"      onclick="setFilter('In Process',this)">⚡ In Progress  <span class="cnt" id="sc-ip">0</span></div>
+    <div class="sitem"        id="sf-delayed" onclick="setFilter('Delayed',this)">⏳ Delayed      <span class="cnt" id="sc-delayed">0</span></div>
+    <div class="sitem"        id="sf-done"    onclick="setFilter('Completed',this)">✅ Completed    <span class="cnt" id="sc-done">0</span></div>
+    <div class="sidebar-label" style="margin-top:6px">Priority</div>
+    <div class="sitem" onclick="setFilter('Urgent',this)">🔴 Urgent</div>
+    <div class="sitem" onclick="setFilter('High',this)">🟠 High</div>
+    <div class="sitem" onclick="setFilter('Medium',this)">🟡 Medium</div>
+    <div class="sitem" onclick="setFilter('Low',this)">🟢 Low</div>
+    <div class="sidebar-label" style="margin-top:6px">Machines</div>
+    <div id="machineList"></div>
+  </div>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat" style="border-top:3px solid #ff3b3b"><div class="stat-num" id="st-urg" style="color:#ff3b3b">0</div><div class="stat-lbl">🔴 Urgent Open</div></div>
+      <div class="stat" style="border-top:3px solid #5b9ef5"><div class="stat-num" id="st-open" style="color:#5b9ef5">0</div><div class="stat-lbl">Total Open</div></div>
+      <div class="stat" style="border-top:3px solid #ff6b6b"><div class="stat-num" id="st-del" style="color:#ff6b6b">0</div><div class="stat-lbl">⏳ Delayed</div></div>
+      <div class="stat" style="border-top:3px solid #4dd68a"><div class="stat-num" id="st-done" style="color:#4dd68a">0</div><div class="stat-lbl">✅ Completed</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="view-title" id="viewTitle">All Work Orders</div>
+      <input class="search" id="searchBox" placeholder="🔍  Search tickets, machines…" oninput="renderTable()">
+      <button class="sort-btn" onclick="toggleSort()">Sort: <span id="sortLbl">Newest</span></button>
+      <button class="sort-btn" onclick="loadOrders()" title="Refresh">🔄 Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Priority</th><th>Status</th><th>Equipment</th>
+          <th>Description</th><th>Assigned To</th><th>Date</th><th></th>
+        </tr></thead>
+        <tbody id="tbody"><tr class="loading-row"><td colspan="8">Loading work orders…</td></tr></tbody>
+      </table>
+      <div id="emptyState" class="empty" style="display:none">
+        <div class="empty-icon">🔍</div>
+        <div style="font-size:18px;font-weight:900;margin-bottom:6px">No Work Orders Found</div>
+        <div style="font-size:13px">Try a different filter or add a new work order.</div>
+      </div>
+    </div>
+    <div class="footer-note" id="footerNote"></div>
+  </div>
+</div>
+
+<!-- NEW ORDER MODAL -->
+<div class="overlay" id="newOverlay" onclick="if(event.target===this)closeNew()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">New Work Order</div><div class="modal-sub">Ticket # is assigned automatically</div></div>
+      <div class="modal-close" onclick="closeNew()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div><label>Priority<span class="req">*</span></label>
+        <select id="n-pri"><option value="">Select…</option><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option><option>Potential Issue</option></select></div>
+      <div><label>Request Type<span class="req">*</span></label>
+        <select id="n-type"><option value="">Select…</option><option>Repair</option><option>PM</option><option>Calibration</option><option>Cleaning/Lubrication</option><option>Electronic</option><option>Facility</option><option>Other</option></select></div>
+      <div><label>Equipment / Machine<span class="req">*</span></label>
+        <select id="n-equip" onchange="updateParts('n-equip','n-detail')"><option value="">Select machine…</option></select></div>
+      <div><label>Equipment Detail / Part</label>
+        <select id="n-detail"><option value="">Select machine first…</option></select></div>
+      <div class="full"><label>Description of Problem<span class="req">*</span></label>
+        <textarea id="n-desc" placeholder="Describe the issue — lane numbers, error codes, symptoms…"></textarea></div>
+      <div class="divider">Assignment</div>
+      <div><label>Assign To</label>
+        <select id="n-assign"><option value="">Unassigned / TBD</option>
+          <option>Thomas</option><option>Adrian</option><option>Uriel</option><option>Jose</option>
+          <option>Thomas/Uriel</option><option>Adrian/Thomas</option><option>Adrian/Jose</option><option>Adrian/Uriel/Thomas</option>
+        </select></div>
+      <div><label>Requested By</label><input id="n-reqby" type="text" placeholder="Your name"></div>
+      <div><label>Work Order Date</label><div class="date-wrap"><input id="n-date" type="date"><span class="cal-icon">📅</span></div></div>
+      <div><label>Requested Completion Date</label><div class="date-wrap"><input id="n-compdate" type="date"><span class="cal-icon">📅</span></div></div>
+      <div><label>Notes</label><input id="n-notes" type="text" placeholder="Additional notes…"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeNew()">Cancel</button>
+      <button class="btn-primary" onclick="createOrder()" id="createBtn">Create Work Order →</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-hdr">
+      <div><div class="modal-title" id="d-title">Work Order</div><div class="modal-sub" id="d-sub"></div></div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="btn-blue" onclick="printCurrent()">🖨️ Print</button>
+        <button class="btn-blue" onclick="editCurrent()">✏️ Update</button>
+        <div class="modal-close" onclick="closeDetail()">✕</div>
+      </div>
+    </div>
+    <div id="d-body" class="d-body-pad" style="padding:18px 22px"></div>
+    <div class="modal-footer"><button class="btn-secondary" onclick="closeDetail()">Close</button></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title" id="e-title">Update Order</div><div class="modal-sub">Change status, resolution, assignment</div></div>
+      <div class="modal-close" onclick="closeEdit()">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="e-id">
+      <div><label>Status</label>
+        <select id="e-status"><option>Not Started</option><option>In Process</option><option>Delayed</option><option>Completed</option></select></div>
+      <div><label>Priority</label>
+        <select id="e-pri"><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option><option>Potential Issue</option></select></div>
+      <div><label>Assigned To</label>
+        <select id="e-assign"><option value="">Unassigned</option>
+          <option>Thomas</option><option>Adrian</option><option>Uriel</option><option>Jose</option>
+          <option>Thomas/Uriel</option><option>Adrian/Thomas</option><option>Adrian/Jose</option><option>Adrian/Uriel/Thomas</option>
+        </select></div>
+      <div><label>Equipment Detail</label><input id="e-detail" type="text"></div>
+      <div class="full"><label>Resolution / Work Performed</label>
+        <textarea id="e-resolution" placeholder="What was done to fix the issue…"></textarea></div>
+      <div><label>Delay Reason</label>
+        <select id="e-delay"><option value="">None</option>
+          <option>Parts Delayed</option><option>Parts Ordered</option>
+          <option>Outside Contractor Contacted</option><option>Outside Contractor Scheduled</option>
+          <option>Waiting on Approval</option><option>Other</option>
+        </select></div>
+      <div><label>Completion Date</label><input id="e-compdate" type="date"></div>
+      <div class="full"><label>Notes</label><input id="e-notes" type="text"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" onclick="deleteOrder()">🗑 Delete</button>
+      <button class="btn-secondary" onclick="closeEdit()">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()" id="saveBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- MACHINE MANAGER MODAL -->
+<div class="overlay" id="mmOverlay" onclick="if(event.target===this)closeMachineManager()">
+  <div class="modal mgr-modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">⚙ Manage Machines</div><div class="modal-sub">Add or remove machines and their parts</div></div>
+      <div class="modal-close" onclick="closeMachineManager()">✕</div>
+    </div>
+    <div style="padding:18px 22px;max-height:68vh;overflow-y:auto">
+      <div class="add-machine-box">
+        <label>➕ Add New Machine</label>
+        <input id="mm-name" placeholder="Machine name (e.g. New Conveyor Line 4)">
+        <label style="margin-top:6px">Parts / Components (one per line)</label>
+        <textarea id="mm-parts" placeholder="Conveyor Belt&#10;Drive Motor&#10;Sensor&#10;General" style="min-height:80px"></textarea>
+        <button class="btn-primary" onclick="addMachine()" style="margin-top:10px">Add Machine</button>
+      </div>
+      <div id="mm-machine-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeMachineManager()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SB_URL = 'https://ynaedcbntjbudqwytwoy.supabase.co';
+const SB_KEY = 'sb_publishable_jbCo0VTUynzlyohdrKQ0iw__speXvwN';
+
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Prefer': 'return=representation'
+};
+
+// ── MACHINE PARTS (Shared via Supabase) ───────────────────────────────────────
+const DEFAULT_PARTS = {
+  Omnia_PX_700:["Lane ___ Printer","Lane ___ Carton Feeder","Lane ___ Egg Feeder","Lane ___ Timing","UV Sanitizer - Inner","UV Sanitizer - Outer","Crack Detector - Inner","Crack Detector - Outer","Weigher - Inner","Weigher - Outer","Blood Detection","Hawaii Ink Printer","Egg Transport","Rework/Reclean","Main Computer","Conveyor","General"],
+  Shrink_Tech_System_Overwrap:["Steam - Inner","Steam - Outer","Dryer - Inner","Dryer - Outer","UV Sanitizer - Inner","UV Sanitizer - Outer","Blade","Hole Puncher","Heating Element","Roll Feeder","Scrap Plastic","Conveyor","General"],
+  MR12_Case_Packer_1:["Flex Gripper","Conveyor - In","Conveyor - Out","Sensor","Stopper","Box Stopper","General"],
+  MR12_Case_Packer_2:["Flex Gripper","Conveyor - In","Conveyor - Out","Sensor","Stopper","Box Stopper","General"],
+  MR12_Case_Packer_3:["Flex Gripper","Conveyor - In","Conveyor - Out","Sensor","Stopper","Box Stopper","General"],
+  Five_Dozen_Lane_Taper:["Taper","Labeler","Pressure","Conveyor","General"],
+  MCI_10:["Camera","Printer","Sensor","Conveyor","General"],
+  Endoline_Taper_1:["Folder Arms","Taper - Top","Taper - Bottom","Conveyor","General"],
+  Endoline_Taper_2:["Folder Arms","Taper - Top","Taper - Bottom","Conveyor","General"],
+  MR60_Case_Palletiser:["Pallet Feeder","Yaskawa - Sensor","Yaskawa - Claw","Yaskawa - Suction","Yaskawa - Manifold","Yaskawa - Arm","T-Car Pallet Mover","Pallet Wrapper","Conveyor","General"],
+  Facilities:["Forklift","Pallet Jack","Small Compactor","Large Compactor","Car Wash","Entry Gate","Egg Store","Evap. Pools","Dry Storage Racking","Cold Box Racking","Old Plant","General"]
+};
+let PARTS = {...DEFAULT_PARTS};
+
+async function loadParts() {
+  try {
+    const rows = await sbFetch('machine_parts?order=machine_key.asc&limit=200');
+    if (rows && rows.length > 0) {
+      PARTS = {};
+      rows.forEach(r => { PARTS[r.machine_key] = r.parts || []; });
+    } else {
+      // First time: seed Supabase with defaults
+      PARTS = {...DEFAULT_PARTS};
+      await seedParts();
+    }
+  } catch(e) {
+    console.warn('Could not load parts from Supabase, using defaults:', e.message);
+    PARTS = {...DEFAULT_PARTS};
+  }
+}
+
+async function seedParts() {
+  const rows = Object.entries(DEFAULT_PARTS).map(([k,v]) => ({machine_key: k, parts: v}));
+  try { await sbFetch('machine_parts', 'POST', rows); } catch(e) { console.warn('Seed error:', e.message); }
+}
+
+async function saveParts() {
+  // Upsert all machines to Supabase
+  const rows = Object.entries(PARTS).map(([k,v]) => ({machine_key: k, parts: v}));
+  try {
+    await fetch(SB_URL + '/rest/v1/machine_parts', {
+      method: 'POST',
+      headers: {...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(rows)
+    });
+  } catch(e) { console.warn('saveParts error:', e.message); }
+}
+
+async function deletePartRow(machineKey) {
+  try { await sbFetch('machine_parts?machine_key=eq.'+encodeURIComponent(machineKey), 'DELETE'); } catch(e) { console.warn(e); }
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let orders = [];
+let statusFilter = 'all';
+let machineFilter = '';
+let sortDesc = true;
+let currentDetailId = null;
+let toastTimer = null;
+
+// ── SUPABASE API ──────────────────────────────────────────────────────────────
+async function sbFetch(path, method='GET', body=null) {
+  const opts = { method, headers: HEADERS };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if(!r.ok) { const e = await r.text(); throw new Error(e); }
+  return method==='DELETE' ? null : r.json();
+}
+
+async function loadOrders() {
+  setSyncBadge('⏳ Syncing…','#f5a623');
+  try {
+    const data = await sbFetch('work_orders?order=id.desc&limit=500');
+    orders = data.map(r => ({...r, desc: r.description}));
+    renderTable();
+    setSyncBadge('🟢 Live','#4dd68a');
+  } catch(e) {
+    setSyncBadge('🔴 Offline','#ff3b3b');
+    showToast('Could not load orders: ' + e.message, 'err');
+  }
+}
+
+function setSyncBadge(txt, color) {
+  const b = document.getElementById('syncBadge');
+  b.textContent = txt;
+  b.style.color = color;
+}
+
+function nextId() {
+  const nums = orders.map(o=>parseInt(o.id)).filter(n=>!isNaN(n));
+  return String((nums.length ? Math.max(...nums) : 0)+1).padStart(3,'0');
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+
+// ── BADGE HELPERS ─────────────────────────────────────────────────────────────
+const PCLS = {Urgent:'p-urgent',High:'p-high',Medium:'p-medium',Low:'p-low','Potential Issue':'p-potential'};
+const SCLS = {'Not Started':'s-notstart','In Process':'s-inprocess',Delayed:'s-delayed',Completed:'s-completed'};
+const AVC  = ['#3d7eff','#f5a623','#36d68a','#e84393','#7b9ef5','#00c9b1','#ff7a00'];
+function avc(n){ let h=0; for(const c of(n||'?')) h=c.charCodeAt(0)+((h<<5)-h); return AVC[Math.abs(h)%AVC.length]; }
+function ini(n){ return (n||'?').split('/')[0].trim().slice(0,2).toUpperCase(); }
+function pbadge(p){ return `<span class="badge ${PCLS[p]||'p-low'}">${p}</span>`; }
+function sbadge(s){ return `<span class="badge ${SCLS[s]||'s-notstart'}">${s}</span>`; }
+
+function updateParts(equipId, detailId) {
+  const eq = document.getElementById(equipId).value;
+  const sel = document.getElementById(detailId);
+  const parts = PARTS[eq] || [];
+  sel.innerHTML = parts.length
+    ? '<option value="">Select part…</option>' + parts.map(p=>`<option>${p}</option>`).join('')
+    : '<option value="">Select machine first…</option>';
+}
+
+function rebuildMachineDropdown() {
+  const sel = document.getElementById('n-equip');
+  const cur = sel ? sel.value : '';
+  if(sel) sel.innerHTML = '<option value="">Select machine…</option>' +
+    Object.keys(PARTS).sort().map(m=>`<option value="${m}"${m===cur?' selected':''}>${m.replace(/_/g,' ')}</option>`).join('');
+  const machines = [...new Set(orders.map(o=>o.equipment))].sort();
+  document.getElementById('machineList').innerHTML = machines.map(m =>
+    `<div class="sitem${machineFilter===m?' active':''}" onclick="setMachine('${m}')" style="font-size:11px">🔧 ${m.replace(/_/g,' ')}</div>`
+  ).join('');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = (document.getElementById('searchBox')||{}).value||'';
+  return orders.filter(o => {
+    if(statusFilter==='open') return o.status!=='Completed';
+    if(statusFilter!=='all') return o.status===statusFilter||o.priority===statusFilter;
+    return true;
+  }).filter(o => !machineFilter||o.equipment===machineFilter)
+  .filter(o => {
+    if(!q) return true;
+    const ql=q.toLowerCase();
+    return [o.id,o.desc,o.description,o.equipment,o.detail,o.assigned,o.priority,o.status,o.reqby,o.notes].some(v=>(v||'').toLowerCase().includes(ql));
+  }).sort((a,b)=>sortDesc?b.id.localeCompare(a.id):a.id.localeCompare(b.id));
+}
+
+function renderTable() {
+  const list = getFiltered();
+  const tbody = document.getElementById('tbody');
+  document.getElementById('st-urg').textContent  = orders.filter(o=>o.priority==='Urgent'&&o.status!=='Completed').length;
+  document.getElementById('st-open').textContent = orders.filter(o=>o.status!=='Completed').length;
+  document.getElementById('st-del').textContent  = orders.filter(o=>o.status==='Delayed').length;
+  document.getElementById('st-done').textContent = orders.filter(o=>o.status==='Completed').length;
+  document.getElementById('sc-all').textContent      = orders.length;
+  document.getElementById('sc-open').textContent     = orders.filter(o=>o.status!=='Completed').length;
+  document.getElementById('sc-ip').textContent       = orders.filter(o=>o.status==='In Process').length;
+  document.getElementById('sc-delayed').textContent  = orders.filter(o=>o.status==='Delayed').length;
+  document.getElementById('sc-done').textContent     = orders.filter(o=>o.status==='Completed').length;
+  document.getElementById('footerNote').textContent  = `Showing ${list.length} of ${orders.length} work orders · Live data from Supabase`;
+  rebuildMachineDropdown();
+  if(!list.length){ tbody.innerHTML=''; document.getElementById('emptyState').style.display=''; return; }
+  document.getElementById('emptyState').style.display='none';
+  tbody.innerHTML = list.map(o=>`
+    <tr onclick="openDetail('${o.id}')">
+      <td><span class="tid">#${o.id}</span></td>
+      <td>${pbadge(o.priority)}</td>
+      <td>${sbadge(o.status)}</td>
+      <td><div class="eq-name">${(o.equipment||'').replace(/_/g,' ')}</div>${o.detail?`<div class="eq-detail">${o.detail}</div>`:''}</td>
+      <td><div class="desc-cell">${o.description||o.desc||''}</div></td>
+      <td>${o.assigned?`<div class="assignee"><div class="avatar" style="background:${avc(o.assigned)}">${ini(o.assigned)}</div>${o.assigned}</div>`:'<span style="color:#2e3347;font-style:italic;font-size:12px">Unassigned</span>'}</td>
+      <td style="font-size:11px;color:#2e3347;white-space:nowrap">${o.date||''}</td>
+      <td><div class="edit-btn" onclick="event.stopPropagation();openEdit('${o.id}')">✏️</div></td>
+    </tr>`).join('');
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function setFilter(f,el){
+  statusFilter=f; machineFilter='';
+  document.querySelectorAll('.sitem').forEach(e=>e.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={all:'All Work Orders',open:'Open Work Orders','In Process':'In Progress',Delayed:'Delayed',Completed:'Completed',Urgent:'Urgent',High:'High Priority',Medium:'Medium Priority',Low:'Low Priority'};
+  document.getElementById('viewTitle').textContent=titles[f]||f.replace(/_/g,' ');
+  renderTable();
+}
+function setMachine(m){
+  machineFilter=machineFilter===m?'':m; statusFilter='all';
+  document.querySelectorAll('.sitem').forEach(e=>e.classList.remove('active'));
+  document.getElementById('sf-all').classList.add('active');
+  document.getElementById('viewTitle').textContent=machineFilter?machineFilter.replace(/_/g,' '):'All Work Orders';
+  renderTable();
+}
+function toggleSort(){ sortDesc=!sortDesc; document.getElementById('sortLbl').textContent=sortDesc?'Newest':'Oldest'; renderTable(); }
+
+// ── CREATE ────────────────────────────────────────────────────────────────────
+function openNew(){ rebuildMachineDropdown(); document.getElementById('n-date').value=today(); document.getElementById('newOverlay').classList.add('open'); }
+function closeNew(){ document.getElementById('newOverlay').classList.remove('open'); }
+
+async function createOrder() {
+  const pri=document.getElementById('n-pri').value;
+  const type=document.getElementById('n-type').value;
+  const equip=document.getElementById('n-equip').value;
+  const desc=document.getElementById('n-desc').value.trim();
+  if(!pri||!type||!equip||!desc){ showToast('⚠️ Fill in Priority, Type, Equipment and Description.','err'); return; }
+  const btn=document.getElementById('createBtn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  const o = {
+    id:nextId(), date:document.getElementById('n-date').value||today(), priority:pri, status:'Not Started',
+    assigned:document.getElementById('n-assign').value, reqtype:type,
+    equipment:equip, detail:document.getElementById('n-detail').value,
+    description:desc, resolution:'', delay:'', compdate:'',
+    reqcompdate:document.getElementById('n-compdate').value,
+    notes:document.getElementById('n-notes').value,
+    reqby:document.getElementById('n-reqby').value,
+  };
+  try {
+    await sbFetch('work_orders', 'POST', o);
+    await loadOrders();
+    closeNew();
+    ['n-pri','n-type','n-equip','n-detail','n-assign'].forEach(id=>document.getElementById(id).value='');
+    ['n-desc','n-notes','n-reqby'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('n-compdate').value='';
+    document.getElementById('n-date').value='';
+    showToast('✅ Work Order #'+o.id+' created and shared!','ok');
+  } catch(e) { showToast('Error: '+e.message,'err'); }
+  btn.textContent='Create Work Order →'; btn.disabled=false;
+}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  currentDetailId=id;
+  document.getElementById('d-title').textContent='Work Order #'+o.id;
+  document.getElementById('d-sub').textContent='Created '+(o.date||'')+(o.reqby?' · by '+o.reqby:'');
+  const desc=o.description||o.desc||'';
+  const meta=[['Equipment',(o.equipment||'').replace(/_/g,' ')],['Detail / Part',o.detail||'—'],['Request Type',o.reqtype||'—'],['Assigned To',o.assigned||'Unassigned'],['Requested By',o.reqby||'—'],['Date',o.date||'—'],['Req. Completion',o.reqcompdate||'—'],...(o.compdate?[['Completed',o.compdate]]:[]),(o.delay?[['Delay Reason',o.delay]]:[])].filter(x=>x.length);
+  document.getElementById('d-body').innerHTML=`
+    <div class="detail-badges">${pbadge(o.priority)} ${sbadge(o.status)}${o.reqtype?` <span class="badge" style="background:#1a1d26;border:1px solid #252b3b;color:#5a6380">${o.reqtype}</span>`:''}</div>
+    <div class="meta-grid">${meta.map(([l,v])=>`<div class="meta-box"><div class="meta-lbl">${l}</div><div class="meta-val">${v}</div></div>`).join('')}</div>
+    <div class="text-section"><div class="text-lbl">Description of Problem</div><div class="text-box" style="border-left:3px solid #c9a800">${desc||'<span class="text-empty">No description.</span>'}</div></div>
+    <div class="text-section"><div class="text-lbl">Resolution / Work Performed</div><div class="text-box" style="border-left:3px solid #1e8449">${o.resolution||'<span class="text-empty">Not yet resolved.</span>'}</div></div>
+    ${o.notes?`<div class="text-section"><div class="text-lbl">Notes</div><div class="text-box" style="border-left:3px solid #2756c5">${o.notes}</div></div>`:''}`;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('open'); }
+function editCurrent(){ closeDetail(); openEdit(currentDetailId); }
+
+// ── EDIT ──────────────────────────────────────────────────────────────────────
+function openEdit(id) {
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  document.getElementById('e-title').textContent='Update Work Order #'+id;
+  document.getElementById('e-id').value=id;
+  document.getElementById('e-status').value=o.status||'Not Started';
+  document.getElementById('e-pri').value=o.priority||'Medium';
+  document.getElementById('e-assign').value=o.assigned||'';
+  document.getElementById('e-detail').value=o.detail||'';
+  document.getElementById('e-resolution').value=o.resolution||'';
+  document.getElementById('e-delay').value=o.delay||'';
+  document.getElementById('e-compdate').value=o.compdate||'';
+  document.getElementById('e-notes').value=o.notes||'';
+  document.getElementById('editOverlay').classList.add('open');
+}
+function closeEdit(){ document.getElementById('editOverlay').classList.remove('open'); }
+
+async function saveEdit() {
+  const id=document.getElementById('e-id').value;
+  const btn=document.getElementById('saveBtn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  const updates={
+    status:document.getElementById('e-status').value,
+    priority:document.getElementById('e-pri').value,
+    assigned:document.getElementById('e-assign').value,
+    detail:document.getElementById('e-detail').value,
+    resolution:document.getElementById('e-resolution').value,
+    delay:document.getElementById('e-delay').value,
+    compdate:document.getElementById('e-compdate').value,
+    notes:document.getElementById('e-notes').value,
+  };
+  try {
+    await sbFetch('work_orders?id=eq.'+id, 'PATCH', updates);
+    await loadOrders();
+    closeEdit();
+    showToast('✅ Work Order #'+id+' updated!','ok');
+  } catch(e) { showToast('Error: '+e.message,'err'); }
+  btn.textContent='Save Changes'; btn.disabled=false;
+}
+
+async function deleteOrder() {
+  const id=document.getElementById('e-id').value;
+  if(!confirm('Delete Work Order #'+id+'? This cannot be undone.')) return;
+  try {
+    await sbFetch('work_orders?id=eq.'+id,'DELETE');
+    await loadOrders();
+    closeEdit();
+    showToast('Deleted #'+id,'ok');
+  } catch(e) { showToast('Error: '+e.message,'err'); }
+}
+
+// ── PRINT ─────────────────────────────────────────────────────────────────────
+function printCurrent() {
+  const o=orders.find(x=>x.id===currentDetailId); if(!o) return;
+  const desc=o.description||o.desc||'';
+  const w=window.open('','_blank','width=820,height=960');
+  w.document.write(`<!DOCTYPE html><html><head><title>Work Order #${o.id}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#fff;color:#000;padding:26px;font-size:13px}
+  .hdr{background:#1F3864;color:#fff;padding:17px 21px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center}
+  .bod{border:1px solid #ccc;border-top:none;border-radius:0 0 8px 8px;padding:17px}
+  table{width:100%;border-collapse:collapse;margin-bottom:14px}td{padding:8px 10px;border:1px solid #ddd;font-size:12px}
+  .lbl{background:#f5f5f5;font-size:10px;font-weight:700;text-transform:uppercase;color:#555;width:125px}
+  .sec{font-size:10px;font-weight:800;text-transform:uppercase;color:#444;margin:13px 0 6px;padding-bottom:4px;border-bottom:2px solid #1F3864}
+  .box{background:#fffdf0;border:1px solid #e8d890;border-radius:6px;padding:11px;font-size:13px;line-height:1.7;min-height:56px}
+  .resbox{background:#f5fff8;border:1px solid #b0ddb8;border-radius:6px;padding:11px;font-size:13px;line-height:1.7;min-height:56px}
+  .task-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #eee}
+  .chk{width:16px;height:16px;border:2px solid #bbb;border-radius:3px;flex-shrink:0}
+  .sign-grid{display:grid;grid-template-columns:1fr 1fr}
+  .sign-cell{padding:13px;border:1px solid #ddd}
+  .sign-lbl{font-size:10px;font-weight:700;text-transform:uppercase;color:#555}
+  .sign-line{border-top:1px solid #999;margin-top:28px;padding-top:3px;font-size:10px;color:#999}
+  @media print{body{padding:8px}button{display:none}}</style></head>
+  <body>
+  <div class="hdr">
+    <div><div style="font-size:21px;font-weight:900;letter-spacing:2px">⚙ WORK ORDER #${o.id}</div><div style="font-size:11px;opacity:0.65;margin-top:3px">Maintenance · ${o.date}</div></div>
+    <div style="text-align:right"><div style="font-size:10px;opacity:0.65;text-transform:uppercase;letter-spacing:1px">Priority</div><div style="font-size:19px;font-weight:900">${o.priority.toUpperCase()}</div></div>
+  </div>
+  <div class="bod">
+    <table>
+      <tr><td class="lbl">Status</td><td>${o.status}</td><td class="lbl">Assigned To</td><td>${o.assigned||'TBD'}</td></tr>
+      <tr><td class="lbl">Equipment</td><td>${(o.equipment||'').replace(/_/g,' ')}</td><td class="lbl">Detail / Part</td><td>${o.detail||'—'}</td></tr>
+      <tr><td class="lbl">Request Type</td><td>${o.reqtype||'—'}</td><td class="lbl">Req. Completion</td><td>${o.reqcompdate||'—'}</td></tr>
+      ${o.reqby?`<tr><td class="lbl">Requested By</td><td colspan="3">${o.reqby}</td></tr>`:''}
+    </table>
+    <div class="sec">Description of Problem</div><div class="box">${desc}</div>
+    <div class="sec">Tasks to Complete</div>
+    ${[1,2,3,4,5,6,7,8].map(n=>`<div class="task-row"><div class="chk"></div><div style="flex:1;color:#aaa;font-size:12px">${n}. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><div style="width:70px;color:#aaa;font-size:11px">Tech: ____</div></div>`).join('')}
+    <div class="sec">Resolution / Work Performed</div><div class="resbox">${o.resolution||''}</div>
+    ${o.delay?`<div class="sec">Delay Reason</div><div style="color:#c0392b;padding:7px 0;font-size:13px">${o.delay}</div>`:''}
+    <div class="sec" style="margin-top:16px">Sign-Off</div>
+    <div class="sign-grid">
+      <div class="sign-cell"><div class="sign-lbl">Technician Signature</div><div class="sign-line">Sign &amp; Date</div></div>
+      <div class="sign-cell"><div class="sign-lbl">Supervisor Approval</div><div class="sign-line">Sign &amp; Date</div></div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:12px">
+    <button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:10px 26px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">🖨️ Print / Save as PDF</button>
+  </div>
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <button class="mobile-nav-btn active" id="mnav-all" onclick="mobileFilter('all','mnav-all')">
+    <span>📋</span><span>All</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-open" onclick="mobileFilter('open','mnav-open')">
+    <span>🔓</span><span>Open</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-ip" onclick="mobileFilter('In Process','mnav-ip')">
+    <span>⚡</span><span>In Progress</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-new" onclick="openNew()">
+    <span style="background:#f5a623;color:#000;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:2px">＋</span>
+    <span>New</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-done" onclick="mobileFilter('Completed','mnav-done')">
+    <span>✅</span><span>Done</span>
+  </button>
+</div>
+
+</body></html>`);
+  w.document.close();
+}
+
+// ── MACHINE MANAGER ───────────────────────────────────────────────────────────
+function openMachineManager(){ renderMachineManager(); document.getElementById('mmOverlay').classList.add('open'); }
+function closeMachineManager(){ document.getElementById('mmOverlay').classList.remove('open'); rebuildMachineDropdown(); renderTable(); }
+
+function renderMachineManager() {
+  document.getElementById('mm-machine-list').innerHTML = Object.keys(PARTS).sort().map(m=>{
+    const parts=PARTS[m]||[];
+    return `<div class="machine-card"><div class="machine-card-hdr"><div><div class="machine-name">${m.replace(/_/g,' ')}</div><div class="machine-count">${parts.length} parts</div></div><button class="del-machine-btn" onclick="deleteMachine('${m}')">🗑 Remove</button></div>
+    <div class="parts-area">${parts.map((p,i)=>`<span class="part-tag">${p}<button onclick="deletePart('${m}',${i})">×</button></span>`).join('')}</div>
+    <div class="add-part-row"><input id="pi-${m}" placeholder="Add new part…" onkeydown="if(event.key==='Enter')addPart('${m}')"><button class="add-part-btn" onclick="addPart('${m}')">+ Add</button></div>
+    </div>`;
+  }).join('');
+}
+
+async function addMachine() {
+  const raw=document.getElementById('mm-name').value.trim();
+  if(!raw){ showToast('Enter a machine name.','err'); return; }
+  const key=raw.replace(/\s+/g,'_');
+  if(PARTS[key]){ showToast('Machine already exists.','err'); return; }
+  const parts=document.getElementById('mm-parts').value.split('\n').map(p=>p.trim()).filter(p=>p);
+  if(!parts.includes('General')) parts.push('General');
+  PARTS[key]=parts; await saveParts();
+  document.getElementById('mm-name').value=''; document.getElementById('mm-parts').value='';
+  renderMachineManager(); showToast('✅ Machine added!','ok');
+}
+async function deleteMachine(m) {
+  if(!confirm('Remove machine "'+m.replace(/_/g,' ')+'"?')) return;
+  delete PARTS[m];
+  await deletePartRow(m);
+  renderMachineManager(); showToast('Removed','ok');
+}
+async function addPart(m) {
+  const inp=document.getElementById('pi-'+m);
+  const val=inp.value.trim();
+  if(!val){ showToast('Enter a part name.','err'); return; }
+  if(!PARTS[m]) PARTS[m]=[];
+  PARTS[m].push(val); await saveParts(); inp.value=''; renderMachineManager(); showToast('✅ Part added!','ok');
+}
+async function deletePart(m,i){ PARTS[m].splice(i,1); await saveParts(); renderMachineManager(); }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') ['newOverlay','detailOverlay','editOverlay','mmOverlay'].forEach(id=>document.getElementById(id).classList.remove('open'));
+});
+
+
+function mobileFilter(f, btnId) {
+  document.querySelectorAll('.mobile-nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById(btnId);
+  if(btn) btn.classList.add('active');
+  setFilter(f, document.getElementById('sf-'+{all:'all',open:'open','In Process':'ip',Completed:'done'}[f]||'all'));
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadParts();
+  rebuildMachineDropdown();
+  await loadOrders();
+  setInterval(loadOrders, 30000); // auto-refresh every 30 seconds
+})();
+</script>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <button class="mobile-nav-btn active" id="mnav-all" onclick="mobileFilter('all','mnav-all')">
+    <span>📋</span><span>All</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-open" onclick="mobileFilter('open','mnav-open')">
+    <span>🔓</span><span>Open</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-ip" onclick="mobileFilter('In Process','mnav-ip')">
+    <span>⚡</span><span>In Progress</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-new" onclick="openNew()">
+    <span style="background:#f5a623;color:#000;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:2px">＋</span>
+    <span>New</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnav-done" onclick="mobileFilter('Completed','mnav-done')">
+    <span>✅</span><span>Done</span>
+  </button>
+</div>
+
+<!-- PWA Install Banner -->
+<div id="pwa-banner">
+  <div id="pwa-banner-icon">⚙</div>
+  <div id="pwa-banner-text">
+    <div id="pwa-banner-title">Install Maintenance Portal</div>
+    <div id="pwa-banner-sub">Add to your home screen for quick access — works like a real app</div>
+  </div>
+  <button id="pwa-install-btn">📲 Install</button>
+  <button id="pwa-dismiss-btn" title="Dismiss">✕</button>
+</div>
+
+<script>
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW:', err));
+  });
+}
+
+// ── PWA INSTALL PROMPT ────────────────────────────────────────────────────────
+let deferredPrompt = null;
+const banner = document.getElementById('pwa-banner');
+const installBtn = document.getElementById('pwa-install-btn');
+const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Only show if not already dismissed this session
+  if (!sessionStorage.getItem('pwa-dismissed')) {
+    banner.classList.add('show');
+    document.body.classList.add('has-pwa-banner');
+  }
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  banner.classList.remove('show');
+  document.body.classList.remove('has-pwa-banner');
+  if (outcome === 'accepted') showToast('✅ App installed! Find it on your home screen.', 'ok');
+});
+
+dismissBtn.addEventListener('click', () => {
+  banner.classList.remove('show');
+  document.body.classList.remove('has-pwa-banner');
+  sessionStorage.setItem('pwa-dismissed', '1');
+});
+
+// Hide banner once app is installed
+window.addEventListener('appinstalled', () => {
+  banner.classList.remove('show');
+  document.body.classList.remove('has-pwa-banner');
+});
+
+// ── HANDLE ?action=new SHORTCUT ───────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(location.search).get('action') === 'new') {
+    // Wait for app to init then open the new order modal
+    setTimeout(() => openNew && openNew(), 1500);
+  }
+});
+</script>
+
+</body>
+</html>
